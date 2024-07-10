@@ -33,7 +33,7 @@ consumer = Consumer(conf)
 # Subscribe to topic
 consumer.subscribe(['COOPData'])
 
-
+# Stores the consumed messages
 messages = []
 
 # Poll for messages
@@ -59,7 +59,7 @@ finally:
 
     # Extract keys and values into separate lists
     keys = [message['key'] for message in messages]
-    values = [json.loads(message['value']) for message in messages]  # Use eval to convert string representation of dict to actual dict
+    values = [json.loads(message['value']) for message in messages] 
 
     # Normalize dictionary values to a DataFrame
     values_df = pd.json_normalize(values)
@@ -68,4 +68,4 @@ finally:
     result_df = pd.DataFrame({'key': keys}).join(values_df)
 
     # Save DataFrame to CSV
-    result_df.to_csv('kafka_messages.csv', index=False)
+    result_df.to_csv('transformed.csv', index=False)
