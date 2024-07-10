@@ -68,4 +68,4 @@ finally:
     result_df = pd.DataFrame({'key': keys}).join(values_df)
 
     # Save DataFrame to CSV
-    result_df.to_csv('transformed.csv', index=False)
+    result_df.to_csv('consumerOutput.csv', index=False)
