@@ -1,6 +1,17 @@
 from confluent_kafka import Consumer, KafkaException, KafkaError
 import os
+import pandas as pd
+import json
 
+def load_env_variables():
+    """Loads environment variables from a .env file"""
+    if os.path.exists(".env"):
+        with open(".env") as f:
+            for line in f:
+                key, value = line.strip().split("=")
+                os.environ[key] = value
+
+load_env_variables()
 username = os.environ.get("KAFKA_USERNAME")
 password = os.environ.get("PASSWORD")
 location = os.environ.get("LOCATION")
@@ -22,6 +33,9 @@ consumer = Consumer(conf)
 # Subscribe to topic
 consumer.subscribe(['COOPData'])
 
+
+messages = []
+
 # Poll for messages
 try:
     while True:
@@ -34,7 +48,24 @@ try:
             elif msg.error():
                 raise KafkaException(msg.error())
         else:
+            key = msg.key().decode('utf-8') if msg.key() else None
+            value = msg.value().decode('utf-8')
             print('Received message: {0}'.format(msg.value().decode('utf-8')))
+            messages.append({'key': key, 'value': value})
 finally:
     # Close down consumer to commit final offsets.
     consumer.close()
+
+
+    # Extract keys and values into separate lists
+    keys = [message['key'] for message in messages]
+    values = [json.loads(message['value']) for message in messages]  # Use eval to convert string representation of dict to actual dict
+
+    # Normalize dictionary values to a DataFrame
+    values_df = pd.json_normalize(values)
+
+    # Combine keys with the normalized values DataFrame
+    result_df = pd.DataFrame({'key': keys}).join(values_df)
+
+    # Save DataFrame to CSV
+    result_df.to_csv('kafka_messages.csv', index=False)
